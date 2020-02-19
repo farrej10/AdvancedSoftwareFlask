@@ -1,15 +1,11 @@
 from flask import Flask
-#from flask.ext.aiohttp import AioHTTP
 import aiohttp
 import asyncio
 import requests
 import pdb
 import json
 import csv
-import pandas
-import pickle
-import pprint
-import tornado
+import time
 
 app = Flask(__name__)
 
@@ -24,17 +20,19 @@ urls_rail = []
         
 def csvsaver(csvname,itemlist):
 
+
     with open(csvname, 'w') as f:
         
-        #temp = json.loads(itemlist[5])
-        results_dict = itemlist[5]['results'][0]
+        print(len(itemlist))
+        temp = json.loads(itemlist[5])
+        results_dict = temp['results'][0]
         results_dict["stopid"] = 0
         w = csv.DictWriter(f,results_dict.keys())
         w.writeheader()
 
         for item in itemlist:
 
-            jsonitem = item
+            jsonitem = json.loads(item)
             #w.writerow({})
 
             x = 0
@@ -50,31 +48,44 @@ def csvsaver(csvname,itemlist):
 
 
 
+async def fetch(session, url, sema):
+    async with sema, session.get(url) as response:
+        return await response.text()
 
-def updatedata(urls,csvname):
-
-    responses = []
-
-
-    for url in urls:
-        responses.append(requests.get(url).json())
-        print(url)
+async def updatedata(urls,csvname):
+    
+    tasks = []
+    sema = asyncio.BoundedSemaphore(value=500)
+    async with aiohttp.ClientSession() as session:
+        for url in urls:
+            tasks.append(fetch(session, url, sema))
+        
+        responses = await asyncio.gather(*tasks)
 
     csvsaver(csvname,responses)
-    return ("",204)
+    
+
 
 
      
 @app.route('/update')              
 def update():
 
+
     #pdb.set_trace()
-    updatedata(urls_rail,"rail.csv")
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    loop.run_until_complete(updatedata(urls_rail,"rail.csv"))
     print("Done rails")
-    updatedata(urls_luas,"luas.csv")
+
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(updatedata(urls_luas,"luas.csv"))
     print("Done luas")
-    updatedata(urls_bus,"bus.csv")
+
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(updatedata(urls_bus,"bus.csv"))
     print("Done bus")
+
 
     return ('',204)
     
@@ -88,7 +99,7 @@ def luas():
         contents = f.read()
         return contents
         
-    return ('',204)
+    return ('',502)
     
 @app.route('/bus')
 def bus():
@@ -97,7 +108,7 @@ def bus():
         contents = f.read()
         return contents
         
-    return ('',204)
+    return ('',502)
     
 @app.route('/rail')
 def rail():
@@ -106,7 +117,7 @@ def rail():
         contents = f.read()
         return contents
         
-    return ('',204)
+    return ('',502)
 
 @app.before_first_request  
 def stopinit():
