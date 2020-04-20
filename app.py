@@ -1,4 +1,5 @@
 from flask import Flask
+from flask import request
 import aiohttp
 import asyncio
 import requests
@@ -6,6 +7,7 @@ import pdb
 import json
 import csv
 import time
+import datetime
 
 app = Flask(__name__)
 
@@ -65,7 +67,53 @@ async def updatedata(urls,csvname):
     csvsaver(csvname,responses)
     
 
+@app.route("/busroutes")
+def busroutes():
+    
 
+    routeID = request.args.get("route", default = "NA", type = str)
+    operator = request.args.get("operator",default = "NA",type = str)
+
+    if (routeID == "NA") or (operator == "NA"):
+        return ('Bad Request',400)
+    
+
+
+    stopresponse = requests.get("https://data.smartdublin.ie/cgi-bin/rtpi/routeinformation?routeid={}&operator={}".format(routeID,operator))
+    stops = stopresponse.json()
+
+    if(stops['errorcode'] != "0"):
+        return ('Server Error',500)
+
+
+    #pdb.set_trace()
+    return(stops)
+
+@app.route("/status")
+def status():
+    
+    currentDT = datetime.datetime.now()
+    currentMinute = currentDT.minute
+    statusDict={}
+
+    if currentMinute >= 0 and currentMinute < 15:
+        statusDict['bus'] = True
+        statusDict['luas'] = True
+
+    if (currentMinute >= 15 ) and (currentMinute < 30):
+        statusDict['bus'] = False
+        statusDict['luas'] = True
+
+    if (currentMinute >= 30 ) and (currentMinute < 45):
+        statusDict['bus'] = True
+        statusDict['luas'] = False
+	
+    if (currentMinute >= 45 ) and (currentMinute < 60):
+        statusDict['bus'] = False
+        statusDict['luas'] = False
+
+    statusjson = json.dumps(statusDict)
+    return(statusjson)
 
      
 @app.route('/update')              
