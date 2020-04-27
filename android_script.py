@@ -491,7 +491,12 @@ def get_paths(start, end, case, G):
             path = start_here(start, end, mode, other_modes, case, G)
             if path:
                 paths[mode] = path
-        return paths
+        if not paths:
+            short_path['nodes'] = [short_path['nodes']]
+            paths['walk'] = short_path
+            return paths
+        else:
+            return paths
 
 def calculate_coordinates(G, paths):
     for key, item in paths.items():    

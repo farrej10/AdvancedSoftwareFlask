@@ -102,12 +102,12 @@ def status():
         statusDict['luas'] = True
 
     if (currentMinute >= 15 ) and (currentMinute < 30):
-        statusDict['bus'] = False
-        statusDict['luas'] = True
-
-    if (currentMinute >= 30 ) and (currentMinute < 45):
         statusDict['bus'] = True
         statusDict['luas'] = False
+
+    if (currentMinute >= 30 ) and (currentMinute < 45):
+        statusDict['bus'] = False
+        statusDict['luas'] = True
 	
     if (currentMinute >= 45 ) and (currentMinute < 60):
         statusDict['bus'] = False
@@ -115,7 +115,6 @@ def status():
 
     statusjson = json.dumps(statusDict)
     return(statusjson)
-
 
 @app.route("/getcoords")
 def getcoords():
@@ -131,8 +130,6 @@ def getcoords():
 
     return(coords)
 
-
-     
 @app.route('/update')              
 def update():
 
@@ -217,5 +214,5 @@ def stopinit():
     for stop in stop_list_bus:
         urls_bus.append("{}{}".format(real_endpoint, stop))
 
-if __name__ == '__main__':
-    app.run()
+#if __name__ == '__main__':
+#    app.run()
