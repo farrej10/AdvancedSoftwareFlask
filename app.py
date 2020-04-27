@@ -8,6 +8,7 @@ import json
 import csv
 import time
 import datetime
+from android_script import get_coordinates
 
 app = Flask(__name__)
 
@@ -114,6 +115,22 @@ def status():
 
     statusjson = json.dumps(statusDict)
     return(statusjson)
+
+
+@app.route("/getcoords")
+def getcoords():
+    #http://127.0.0.1:5000/getcoords?latstart=53.2815126&longstart=-6.2341631&latend=53.3881208173444&longend=-6.2659470210&case=0
+    #http://127.0.0.1:5000/getcoords?latstart=53.2965476&longstart=-6.2201313&latend=53.2996109&longend=-6.2178796&case=0
+
+    latstart = request.args.get("latstart", default = 53.2815126, type = float)
+    longstart = request.args.get("longstart",default = -6.2341631,type = float)   
+    latend = request.args.get("latend", default = 53.3881208173444, type = float)
+    longend = request.args.get("longend",default = -6.2659470210,type = float) 
+    usercase = request.args.get("case",default = 0,type = int)
+    coords = get_coordinates((latstart, longstart),(latend, longend), usercase, 'full_graph.json')
+
+    return(coords)
+
 
      
 @app.route('/update')              
